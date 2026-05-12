@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="PWA Battaglia Navale peer-to-peer via WebRTC" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <title>Battaglia Navale P2P</title>
+</head>
+<body>
+  <noscript>Questa app richiede JavaScript.</noscript>
+
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">PWA peer-to-peer</p>
+        <h1>Battaglia Navale</h1>
+      </div>
+      <button id="resetAppBtn" class="ghost-btn" type="button">Reset</button>
+    </header>
+
+    <section id="statusCard" class="card status-card" aria-live="polite">
+      <div class="status-row">
+        <span id="connectionDot" class="dot idle"></span>
+        <div>
+          <strong id="statusTitle">Non collegato</strong>
+          <p id="statusText">Crea una partita oppure unisciti con un codice offerta.</p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="step-tabs" aria-label="Fasi partita">
+      <button class="step-tab active" data-step="connect" type="button">1. Collega</button>
+      <button class="step-tab" data-step="place" type="button">2. Flotta</button>
+      <button class="step-tab" data-step="play" type="button">3. Gioca</button>
+    </nav>
+
+    <section id="connectStep" class="step-panel active">
+      <div class="card">
+        <h2>Collega due telefoni</h2>
+        <p class="muted">Questa versione non usa server di gioco. I due browser si collegano direttamente con WebRTC DataChannel.</p>
+        <div class="button-grid">
+          <button id="hostBtn" class="primary-btn" type="button">Crea partita</button>
+          <button id="guestModeBtn" class="secondary-btn" type="button">Unisciti</button>
+        </div>
+      </div>
+
+      <div id="hostPanel" class="card hidden">
+        <h3>Codice host</h3>
+        <p class="muted">Invia questo codice all’altro telefono. L’altro giocatore lo incolla in “Unisciti”.</p>
+        <label for="offerText">Offerta WebRTC</label>
+        <textarea id="offerText" readonly rows="7" spellcheck="false"></textarea>
+        <div class="button-row">
+          <button id="copyOfferBtn" class="secondary-btn" type="button">Copia offerta</button>
+          <button id="shareOfferBtn" class="secondary-btn" type="button">Condividi</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Risposta guest</h3>
+        <p class="muted">Quando l’altro telefono genera la risposta, incollala qui.</p>
+        <label for="answerInput">Risposta WebRTC</label>
+        <textarea id="answerInput" rows="7" spellcheck="false" placeholder="Incolla qui la risposta del secondo telefono"></textarea>
+        <button id="acceptAnswerBtn" class="primary-btn full" type="button">Completa collegamento</button>
+      </div>
+
+      <div id="guestPanel" class="card hidden">
+        <h3>Unisciti a una partita</h3>
+        <p class="muted">Incolla il codice offerta ricevuto dall’host. Poi invia all’host il codice risposta generato.</p>
+        <label for="offerInput">Offerta host</label>
+        <textarea id="offerInput" rows="7" spellcheck="false" placeholder="Incolla qui l’offerta del primo telefono"></textarea>
+        <button id="createAnswerBtn" class="primary-btn full" type="button">Genera risposta</button>
+
+        <div id="guestAnswerBox" class="hidden">
+          <div class="divider"></div>
+          <label for="guestAnswerText">Risposta da inviare all’host</label>
+          <textarea id="guestAnswerText" readonly rows="7" spellcheck="false"></textarea>
+          <div class="button-row">
+            <button id="copyAnswerBtn" class="secondary-btn" type="button">Copia risposta</button>
+            <button id="shareAnswerBtn" class="secondary-btn" type="button">Condividi</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="placeStep" class="step-panel">
+      <div class="card">
+        <h2>Posiziona la tua flotta</h2>
+        <p class="muted">Le tue navi restano solo sul tuo telefono. L’avversario riceverà solo acqua, colpito o affondato.</p>
+        <div class="placement-controls">
+          <button id="orientationBtn" class="secondary-btn" type="button">Orientamento: orizzontale</button>
+          <button id="autoPlaceBtn" class="secondary-btn" type="button">Auto-piazza</button>
+          <button id="clearFleetBtn" class="ghost-btn" type="button">Svuota</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Navi</h3>
+        <div id="shipList" class="ship-list"></div>
+      </div>
+
+      <div class="card board-card">
+        <div class="board-header">
+          <h3>La tua griglia</h3>
+          <span id="fleetCounter" class="pill">0/5</span>
+        </div>
+        <div id="placementBoard" class="board" role="grid" aria-label="Griglia posizionamento"></div>
+        <button id="readyBtn" class="primary-btn full" type="button" disabled>Conferma flotta</button>
+      </div>
+    </section>
+
+    <section id="playStep" class="step-panel">
+      <div class="card">
+        <h2 id="turnTitle">Partita non iniziata</h2>
+        <p id="turnText" class="muted">Collega i telefoni e conferma entrambe le flotte.</p>
+      </div>
+
+      <div class="card board-card">
+        <div class="board-header">
+          <h3>Attacca</h3>
+          <span id="attackCounter" class="pill">0 colpi</span>
+        </div>
+        <div id="attackBoard" class="board" role="grid" aria-label="Griglia attacco"></div>
+      </div>
+
+      <div class="card board-card">
+        <div class="board-header">
+          <h3>La tua flotta</h3>
+          <span id="damageCounter" class="pill">0 danni</span>
+        </div>
+        <div id="ownBoard" class="board" role="grid" aria-label="Griglia flotta propria"></div>
+      </div>
+
+      <div id="logCard" class="card">
+        <h3>Registro</h3>
+        <ol id="gameLog" class="game-log"></ol>
+      </div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
